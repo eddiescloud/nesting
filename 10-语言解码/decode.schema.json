@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "version": {
+      "const": "0.1"
+    },
+    "transcript": {
+      "type": "string"
+    },
+    "tone": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "intensity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "pace": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "evidence": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "intensity",
+        "pace",
+        "evidence"
+      ],
+      "additionalProperties": false
+    },
+    "meaning": {
+      "type": "object",
+      "properties": {
+        "gist": {
+          "type": "string"
+        },
+        "direction": {
+          "type": "string"
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "keywords": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 6,
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "gist",
+        "direction",
+        "weight",
+        "keywords"
+      ],
+      "additionalProperties": false
+    },
+    "segments": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "weight": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "required": [
+          "text",
+          "role",
+          "weight"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "uncertainty": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "version",
+    "transcript",
+    "tone",
+    "meaning",
+    "segments",
+    "uncertainty"
+  ],
+  "additionalProperties": false
+}

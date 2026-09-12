@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="筑巢：话语停下以后，什么还留在这里。离线交互预览。">
+  <title>筑巢 / Nesting</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/web/interaction/style.css">
+</head>
+<body>
+  <a class="skip" href="#controls">跳到体验操作</a>
+  <main class="experience">
+    <section class="panel" aria-label="体验操作">
+      <header class="brand"><span>Nesting</span><span class="edition">一件关于话语留存的作品</span></header>
+      <div class="panel-body" id="controls">
+        <h1>筑巢<span class="title-dot">。</span></h1>
+        <p class="intro">一句话消失以后，<br>它会和后来的一切融合成什么？</p>
+        <div class="mode-switch" role="group" aria-label="体验方式">
+          <button id="preset-mode" class="mode active" aria-pressed="true" type="button">走进一个故事</button>
+          <button id="personal-mode" class="mode" aria-pressed="false" type="button">写下两句话</button>
+          <button id="voice-mode" class="mode" aria-pressed="false" type="button">说一句话</button>
+        </div>
+        <section id="presets-view" aria-label="虚构故事">
+          <p class="section-note">从一段虚构的经历开始。</p>
+          <fieldset id="stories"><legend class="sr-only">选择一个故事</legend><p id="loading">正在读取故事…</p></fieldset>
+          <div class="story-detail" id="story-detail" hidden>
+            <div class="utterance-row"><span>01</span><p id="quote-a"></p></div>
+            <div class="utterance-row"><span>02</span><p id="quote-b"></p></div>
+          </div>
+          <button id="start" class="primary" type="button" disabled><span>开始这段体验</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg></button>
+          <p class="source-note">最小原型 · 文字结构生蜂，尚未接入录音识别</p>
+          <button id="reload" class="text-button" type="button" hidden>重新读取故事</button>
+        </section>
+        <section id="personal-view" aria-label="写下两句话" hidden>
+          <p class="section-note">不录音，只整理文字并检查格式；模型暂未接入。</p>
+          <form id="personal-form" autocomplete="off">
+            <fieldset class="event-fields"><legend>01 / 第一句话</legend>
+              <label for="utterance-a">那句话 <span>必填 · 120 字以内</span></label>
+              <textarea id="utterance-a" name="utterance-a" required maxlength="120" rows="2" placeholder="曾经听到的一句话"></textarea>
+              <label for="context-a">谁在什么情况下说的</label>
+              <input id="context-a" name="context-a" maxlength="180" placeholder="选填">
+              <label for="feeling-a">你当时的感受</label>
+              <input id="feeling-a" name="feeling-a" maxlength="180" placeholder="选填">
+            </fieldset>
+            <fieldset class="event-fields"><legend>02 / 后来的一句话</legend>
+              <label for="utterance-b">那句话 <span>必填 · 120 字以内</span></label>
+              <textarea id="utterance-b" name="utterance-b" required maxlength="120" rows="2" placeholder="与第一句话有关联的经历"></textarea>
+              <label for="context-b">谁在什么情况下说的</label>
+              <input id="context-b" name="context-b" maxlength="180" placeholder="选填">
+              <label for="feeling-b">你当时的感受</label>
+              <input id="feeling-b" name="feeling-b" maxlength="180" placeholder="选填">
+            </fieldset>
+            <button class="primary" id="validate" type="submit">检查文字格式</button>
+            <button class="text-button" id="clear-input" type="button">清空文字</button>
+            <p class="source-note">仅在本机检查，不保存、不发送给模型。<br>结束体验后清空。</p>
+            <p id="validation" class="validation" role="status" aria-live="polite"></p>
+          </form>
+        </section>
+        <section id="voice-view" hidden aria-label="说一句话">
+          <p class="section-note">对着麦克风说一句话：它会先被拆开，再长成一只蜂。</p>
+          <div class="demo-row" id="demo-row" hidden>
+            <span class="demo-label">演示句（人工占位，未调用模型）：</span>
+            <div class="demo-list" id="demo-list"></div>
+          </div>
+          <div class="voice-controls">
+            <button id="record" class="primary" type="button">开始录音</button>
+            <button id="stop-record" class="secondary" type="button" hidden>停止录音</button>
+          </div>
+          <p id="record-status" class="validation" role="status" aria-live="polite"></p>
+          <audio id="record-playback" controls hidden></audio>
+          <label for="transcript">这句话的文字 <span>必填 · 120 字以内</span></label>
+          <textarea id="transcript" maxlength="120" rows="2" placeholder="语音识别接入前，请把你刚才说的话写在这里"></textarea>
+          <p class="source-note" id="transcript-note">录音只在本机回放，不上传、不保存，结束即清空。<br>
+            正在确认语音识别状态…</p>
+          <button id="decode-start" class="primary" type="button">解码并生长</button>
+          <p id="decode-status" class="validation" role="status" aria-live="polite"></p>
+        </section>
+        <section id="session-view" hidden aria-label="播放控制">
+          <p class="section-note">正在经历</p>
+          <h2 id="session-title"></h2>
+          <p id="session-description" class="session-description"></p>
+          <div class="session-actions">
+            <button id="pause" class="primary" type="button">暂停</button>
+            <button id="replay" class="primary" type="button" hidden>再看一次</button>
+            <button id="exit" class="secondary" type="button">结束并清空</button>
+          </div>
+          <details id="trace-panel" hidden>
+            <summary>这次这只蜂是怎么来的</summary>
+            <p class="source-note">下面每一行都是解码结果到蜂体参数的对应规则，可逐项核对；没有写进规则的数值不会出现在蜂身上。</p>
+            <ol id="trace-list"></ol>
+          </details>
+          <p class="source-note">人工编排的离线故事 · 未使用 AI 生成</p>
+        </section>
+        <p id="notice" class="notice" role="status" aria-live="polite"></p>
+      </div>
+      <footer class="panel-footer"><span>话语 · 交织 · 留存</span><button id="reset-all" type="button" class="text-button">重新开始</button></footer>
+    </section>
+    <section class="stage" id="stage" aria-label="作品预览">
+      <div class="stage-top"><span id="preview-kind">分镜预览</span><div class="stage-tools"><button id="sound" class="stage-tool" type="button" hidden aria-pressed="false">开启声音</button><button id="fullscreen" class="stage-tool" type="button">全屏</button></div></div>
+      <iframe id="visual" title="蜂群视觉" hidden></iframe>
+      <div class="storyboard" id="storyboard">
+        <span class="stage-index" id="stage-index">01 — 06</span>
+        <h2 id="stage-quote">有些话，<br>会在身体里筑巢。</h2>
+        <p id="stage-caption">话语停下以后，什么还留在这里。</p>
+        <div class="fine-line" aria-hidden="true"></div>
+      </div>
+      <div class="stage-bottom">
+        <div class="playback-readout"><span id="phase-label">等待开始</span><span><span id="elapsed">00:00</span><span class="duration"> / 01:00</span></span></div>
+        <div class="timeline" id="timeline" role="progressbar" aria-label="体验进度" aria-valuemin="0" aria-valuemax="60" aria-valuenow="0"></div>
+        <div class="stage-footnote"><span id="visual-note">当前仅预览叙事节奏，尚未包含蜂群动画。</span><span id="stage-source">离线体验</span></div>
+      </div>
+    </section>
+  </main>
+  <noscript><p>请开启浏览器 JavaScript 以使用交互预览。</p></noscript>
+  <script type="module" src="/web/interaction/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+{
+  "version": "0.1",
+  "sourceText": "你可以慢慢说。",
+  "events": [
+    {
+      "id": "a",
+      "energy": 0.25,
+      "dispersion": 0.2,
+      "turbulence": 0.3,
+      "trace": 0.8,
+      "rationale": "用集中的慢速轨迹表现不敢提出需要，以较长轨迹对应逐渐形成的习惯。"
+    },
+    {
+      "id": "b",
+      "energy": 0.45,
+      "dispersion": 0.4,
+      "turbulence": 0.7,
+      "trace": 0.55,
+      "rationale": "方向的反复对应想表达却不知道如何开口。"
+    }
+  ],
+  "interaction": {
+    "weave": 0.8,
+    "settle": 0.65,
+    "explanation": "先前压低需要的经验，与后来被询问时表达受阻的感受，在叙述中相互关联。"
+  },
+  "uncertainty": "这是基于两段简短描述的艺术解释，不能确定实际影响的程度与持续时间。"
+}

@@ -1,0 +1,42 @@
+{
+  "version": "0.1",
+  "transcript": "你不要给别人添麻烦。",
+  "tone": {
+    "label": "压抑",
+    "intensity": 0.58,
+    "pace": 0.34,
+    "evidence": "短句、否定祈使、句末下压；停顿比词数多。"
+  },
+  "meaning": {
+    "gist": "被要求不要成为别人的负担。",
+    "direction": "inward",
+    "weight": 0.72,
+    "keywords": [
+      "不要",
+      "麻烦"
+    ]
+  },
+  "segments": [
+    {
+      "text": "你不要",
+      "role": "head",
+      "weight": 0.35
+    },
+    {
+      "text": "给别人",
+      "role": "abdomen",
+      "weight": 0.3
+    },
+    {
+      "text": "添麻烦",
+      "role": "thorax",
+      "weight": 0.62
+    },
+    {
+      "text": "。",
+      "role": "stinger",
+      "weight": 0.2
+    }
+  ],
+  "uncertainty": "这是依据一句话的转写做的结构转译，不能确定说话人的真实处境、关系与持续时间。"
+}

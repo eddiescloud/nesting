@@ -1,0 +1,37 @@
+{
+  "version": "0.1",
+  "transcript": "快点，来不及了！",
+  "tone": {
+    "label": "急促",
+    "intensity": 0.82,
+    "pace": 0.86,
+    "evidence": "祈使句、短分句、感叹号收尾（人工占位，非模型判断）"
+  },
+  "meaning": {
+    "gist": "在催促中感到时间不够。",
+    "direction": "outward",
+    "weight": 0.6,
+    "keywords": [
+      "快点",
+      "来不及"
+    ]
+  },
+  "segments": [
+    {
+      "text": "快点",
+      "role": "head",
+      "weight": 0.5
+    },
+    {
+      "text": "，来不及了",
+      "role": "thorax",
+      "weight": 0.7
+    },
+    {
+      "text": "！",
+      "role": "stinger",
+      "weight": 0.3
+    }
+  ],
+  "uncertainty": "演示素材：由人工编写的解码结果，未经模型判断，不能代表任何人的真实处境。"
+}

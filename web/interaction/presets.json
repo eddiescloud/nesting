@@ -1,0 +1,100 @@
+[
+  {
+    "id": "held",
+    "title": "被一句话接住",
+    "description": "很久以后，仍然记得被理解的那个瞬间。",
+    "source": "manual-preset",
+    "input": {
+      "events": [
+        {
+          "id": "a",
+          "utterance": "你可以慢慢说。",
+          "context": "朋友在我难以表达时等待。",
+          "feeling": "我感到自己不必急着解释。"
+        },
+        {
+          "id": "b",
+          "utterance": "我在听。",
+          "context": "后来再次向同一个朋友倾诉。",
+          "feeling": "我记起了上次被等待的安心。"
+        }
+      ]
+    },
+    "output": {
+      "version": "0.1",
+      "events": [
+        {
+          "id": "a",
+          "energy": 0.22,
+          "dispersion": 0.45,
+          "turbulence": 0.1,
+          "trace": 0.8,
+          "rationale": "平缓、持久的轨迹表现被等待的感受。"
+        },
+        {
+          "id": "b",
+          "energy": 0.28,
+          "dispersion": 0.55,
+          "turbulence": 0.12,
+          "trace": 0.85,
+          "rationale": "舒展的轨迹对应愿意表达，留下较长余迹。"
+        }
+      ],
+      "interaction": {
+        "weave": 0.65,
+        "settle": 0.5,
+        "explanation": "两次被倾听的经验以平缓轨迹共同形成结构。"
+      },
+      "uncertainty": "人工编写的虚构故事与动画参数，用于离线演示，并非模型输出。"
+    }
+  },
+  {
+    "id": "passing",
+    "title": "轻轻经过",
+    "description": "有些话停留片刻，也可以慢慢散去。",
+    "source": "manual-preset",
+    "input": {
+      "events": [
+        {
+          "id": "a",
+          "utterance": "今天风很大。",
+          "context": "路上与邻居随口交谈。",
+          "feeling": "只是短暂注意到天气。"
+        },
+        {
+          "id": "b",
+          "utterance": "路上小心。",
+          "context": "离开时听到一句普通叮嘱。",
+          "feeling": "觉得温和，但没有反复想起。"
+        }
+      ]
+    },
+    "output": {
+      "version": "0.1",
+      "events": [
+        {
+          "id": "a",
+          "energy": 0.35,
+          "dispersion": 0.7,
+          "turbulence": 0.15,
+          "trace": 0.15,
+          "rationale": "分散短暂的轨迹用于演示轻微留存。"
+        },
+        {
+          "id": "b",
+          "energy": 0.25,
+          "dispersion": 0.65,
+          "turbulence": 0.1,
+          "trace": 0.2,
+          "rationale": "轻缓而短暂的轨迹表现普通叮嘱。"
+        }
+      ],
+      "interaction": {
+        "weave": 0.2,
+        "settle": 0.1,
+        "explanation": "日常话语的关联较弱，仅保留轻薄痕迹。"
+      },
+      "uncertainty": "人工编写的虚构故事与动画参数，用于离线演示，并非模型输出。"
+    }
+  }
+]

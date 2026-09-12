@@ -1,0 +1,26 @@
+# 筑巢 / Nesting —— 版本控制忽略规则
+# 本项目独立使用 Git；不要把桌面父目录纳入本仓库。
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+
+# 编辑器 / 系统
+.DS_Store
+.vscode/
+.idea/
+.workbuddy/
+.workbuddy-ai/
+
+# 本地密钥与机器配置
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# 临时输出
+*.log
+*.tmp
+*.bak
+*.swp

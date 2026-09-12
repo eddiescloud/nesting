@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>筑巢 / Nesting · 视觉模块</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <header id="header">
+      <h1>筑巢 <span class="subtitle">/ Nesting</span></h1>
+      <div id="param-info" class="param-info">文字结构蜂 · 加载中…</div>
+    </header>
+
+    <main id="canvas-container">
+      <canvas id="stage"></canvas>
+    </main>
+
+    <footer id="controls">
+      <div class="control-row">
+        <button id="btn-play" class="btn btn-primary">开始</button>
+        <button id="btn-replay" class="btn" disabled>重播</button>
+      </div>
+      <div class="status-row">
+        <span id="phase-name" class="phase-name">等待开始</span>
+        <span id="time-display" class="time-display">0.0 / 60s</span>
+      </div>
+      <div class="progress-track">
+        <div id="progress-bar" class="progress-bar"></div>
+      </div>
+      <div class="hint">
+        文字结构蜂 · 离线最小原型，未接入录音识别。
+      </div>
+    </footer>
+  </div>
+
+  <!-- 模块脚本（按依赖顺序加载） -->
+  <script src="js/config.js"></script>
+  <script src="js/hive.js"></script>
+  <script src="js/bee.js"></script>
+  <script src="js/ripple.js"></script>
+  <script src="js/reading.js"></script>
+  <script src="js/waveform.js"></script>
+  <script src="js/timeline.js"></script>
+  <script src="js/host-adapter.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

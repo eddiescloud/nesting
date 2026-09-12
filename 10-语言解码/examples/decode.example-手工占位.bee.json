@@ -1,0 +1,189 @@
+{
+  "mode": "derived",
+  "notice": "由已有解码结果确定性派生，未调用模型",
+  "decode": {
+    "version": "0.1",
+    "transcript": "你不要给别人添麻烦。",
+    "tone": {
+      "label": "压抑",
+      "intensity": 0.58,
+      "pace": 0.34,
+      "evidence": "短句、否定祈使、句末下压；停顿比词数多。"
+    },
+    "meaning": {
+      "gist": "被要求不要成为别人的负担。",
+      "direction": "inward",
+      "weight": 0.72,
+      "keywords": [
+        "不要",
+        "麻烦"
+      ]
+    },
+    "segments": [
+      {
+        "text": "你不要",
+        "role": "head",
+        "weight": 0.35
+      },
+      {
+        "text": "给别人",
+        "role": "abdomen",
+        "weight": 0.3
+      },
+      {
+        "text": "添麻烦",
+        "role": "thorax",
+        "weight": 0.62
+      },
+      {
+        "text": "。",
+        "role": "stinger",
+        "weight": 0.2
+      }
+    ],
+    "uncertainty": "这是依据一句话的转写做的结构转译，不能确定说话人的真实处境、关系与持续时间。"
+  },
+  "units": [
+    {
+      "i": 0,
+      "char": "你",
+      "role": "head",
+      "segment": 0,
+      "weight": 0.35
+    },
+    {
+      "i": 1,
+      "char": "不",
+      "role": "head",
+      "segment": 0,
+      "weight": 0.35
+    },
+    {
+      "i": 2,
+      "char": "要",
+      "role": "head",
+      "segment": 0,
+      "weight": 0.35
+    },
+    {
+      "i": 3,
+      "char": "给",
+      "role": "abdomen",
+      "segment": 1,
+      "weight": 0.3
+    },
+    {
+      "i": 4,
+      "char": "别",
+      "role": "abdomen",
+      "segment": 1,
+      "weight": 0.3
+    },
+    {
+      "i": 5,
+      "char": "人",
+      "role": "abdomen",
+      "segment": 1,
+      "weight": 0.3
+    },
+    {
+      "i": 6,
+      "char": "添",
+      "role": "thorax",
+      "segment": 2,
+      "weight": 0.62
+    },
+    {
+      "i": 7,
+      "char": "麻",
+      "role": "thorax",
+      "segment": 2,
+      "weight": 0.62
+    },
+    {
+      "i": 8,
+      "char": "烦",
+      "role": "thorax",
+      "segment": 2,
+      "weight": 0.62
+    },
+    {
+      "i": 9,
+      "char": "。",
+      "role": "stinger",
+      "segment": 3,
+      "weight": 0.2
+    }
+  ],
+  "bee": {
+    "wingbeatHz": 2.644,
+    "tension": 0.65,
+    "spacing": 1.096,
+    "hue": 30.64,
+    "posture": "curl",
+    "bodyScale": 1.066,
+    "bodyWidth": 266.5,
+    "bodyHeight": 202.54,
+    "segmentCount": 10
+  },
+  "trace": [
+    {
+      "from": "segments[0].text=「你不要」role=head",
+      "to": "units[0..2]（head 部位）",
+      "rule": "分段按原句顺序逐字展开为单元，单元继承该段角色与权重"
+    },
+    {
+      "from": "segments[1].text=「给别人」role=abdomen",
+      "to": "units[3..5]（abdomen 部位）",
+      "rule": "分段按原句顺序逐字展开为单元，单元继承该段角色与权重"
+    },
+    {
+      "from": "segments[2].text=「添麻烦」role=thorax",
+      "to": "units[6..8]（thorax 部位）",
+      "rule": "分段按原句顺序逐字展开为单元，单元继承该段角色与权重"
+    },
+    {
+      "from": "segments[3].text=「。」role=stinger",
+      "to": "units[9..9]（stinger 部位）",
+      "rule": "分段按原句顺序逐字展开为单元，单元继承该段角色与权重"
+    },
+    {
+      "from": "tone.intensity=0.58",
+      "to": "bee.wingbeatHz=2.644",
+      "rule": "1.6 + 1.8 × 语气强度（翅膀振动快慢）"
+    },
+    {
+      "from": "tone.intensity=0.58 / meaning.weight=0.72",
+      "to": "bee.tension=0.65",
+      "rule": "0.5 × 语气强度 + 0.5 × 分量（体节绷紧程度）"
+    },
+    {
+      "from": "tone.pace=0.34",
+      "to": "bee.spacing=1.096",
+      "rule": "0.7 + 0.6 × (1 − 节奏)（说得越慢，体节越松）"
+    },
+    {
+      "from": "meaning.direction=inward / tone.intensity=0.58",
+      "to": "bee.hue=30.64",
+      "rule": "38 + 方向偏移（向内 −8 / 向外 +14 / 中性 0）+ (强度 − 0.5) × 8"
+    },
+    {
+      "from": "meaning.direction=inward",
+      "to": "bee.posture=curl",
+      "rule": "向内 curl / 向外 open / 中性 level"
+    },
+    {
+      "from": "meaning.weight=0.72",
+      "to": "bee.bodyScale=1.066",
+      "rule": "0.85 + 0.30 × 分量（分量越重，蜂越大）"
+    },
+    {
+      "from": "segments 的 role 分布",
+      "to": "bee.segmentCount=10",
+      "rule": "每个非空白字符成为一个腹部/头部/胸部/翅/尾单元，上限 32"
+    }
+  ],
+  "created_at": "2026-09-11T10:22:18.184488+00:00",
+  "prompt_sha256": "206e7e0ca841bc5ca386a7f139df4921457ce5c9e8d86278452ed55ac1b48a09",
+  "schema_sha256": "970f1ff223ace707348800ea297e46b36f1bd0969084421a50327e799fb5fe9e"
+}

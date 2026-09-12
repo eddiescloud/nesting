@@ -1,0 +1,37 @@
+{
+  "version": "0.1",
+  "transcript": "今天天气很好。",
+  "tone": {
+    "label": "平稳",
+    "intensity": 0.22,
+    "pace": 0.5,
+    "evidence": "陈述句、无强调词、句末平收（人工占位，非模型判断）"
+  },
+  "meaning": {
+    "gist": "一句普通的日常陈述。",
+    "direction": "neutral",
+    "weight": 0.3,
+    "keywords": [
+      "今天",
+      "很好"
+    ]
+  },
+  "segments": [
+    {
+      "text": "今天",
+      "role": "head",
+      "weight": 0.3
+    },
+    {
+      "text": "天气很好",
+      "role": "thorax",
+      "weight": 0.5
+    },
+    {
+      "text": "。",
+      "role": "stinger",
+      "weight": 0.15
+    }
+  ],
+  "uncertainty": "演示素材：由人工编写的解码结果，未经模型判断，不能代表任何人的真实处境。"
+}

@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>筑巢 · AI 的理解过程（预览）</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 28px 24px 40px;
+    background: #f6f5f2; color: #22201d;
+    font: 14px/1.7 -apple-system, "PingFang SC", "Noto Sans CJK SC", sans-serif;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+  h1 { font-size: 19px; font-weight: 600; margin: 0 0 4px; letter-spacing: .02em; }
+  .sub { color: #6b6862; font-size: 13px; margin: 0 0 20px; }
+  .stage {
+    display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap;
+  }
+  .canvas-box {
+    background: #0e0d0c; border-radius: 10px; padding: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.14), 0 10px 30px rgba(0,0,0,.08);
+  }
+  canvas { display: block; border-radius: 6px; }
+  .panel { flex: 1 1 260px; min-width: 250px; }
+  .ctrl { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  button {
+    font: inherit; padding: 7px 16px; border-radius: 7px; cursor: pointer;
+    border: 1px solid #d8d5ce; background: #fff; color: #22201d;
+  }
+  button:hover { background: #faf9f7; }
+  input[type=range] { flex: 1; accent-color: #b5793a; }
+  .t { font-variant-numeric: tabular-nums; color: #6b6862; min-width: 76px; }
+  ol { margin: 0; padding-left: 20px; }
+  li { margin-bottom: 10px; }
+  li button {
+    all: unset; cursor: pointer; font-weight: 600; font-size: 13px;
+    border-bottom: 1px solid transparent;
+  }
+  li button:hover { border-bottom-color: #b5793a; }
+  li span { display: block; color: #6b6862; font-size: 12.5px; font-weight: 400; }
+  li.on button { color: #b5793a; border-bottom-color: #b5793a; }
+  .note {
+    margin-top: 18px; padding: 12px 14px; border-radius: 8px;
+    background: #fff; border: 1px solid #e6e3dc; color: #5c5953; font-size: 12.5px;
+  }
+  .note b { color: #22201d; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>AI 的理解过程</h1>
+  <p class="sub">画面上部依次展开四层：语气 → 含义 → 分段 → 不确定。每一个字都来自解码层的真实判断；未接入模型时只写「未解码」。</p>
+
+  <div class="stage">
+    <div class="canvas-box"><canvas id="cv" width="1080" height="1920"></canvas></div>
+    <div class="panel">
+      <div class="ctrl">
+        <button id="play">播放</button>
+        <input id="seek" type="range" min="0" max="16" step="0.01" value="0">
+        <span class="t" id="clock">0.00s</span>
+      </div>
+      <ol id="layers">
+        <li data-at="2.5"><button>语气</button><span>10 个候选词横排，扫描针扫过后停在选中的那个，附强度/节奏与「凭什么」</span></li>
+        <li data-at="5.2"><button>含义</button><span>一句话概括 + 力的方向 + 分量 + 关键词</span></li>
+        <li data-at="7.6"><button>分段</button><span>原句逐段 + 部位几何标记（圆头 波翅 方胸 条腹 三角尾针）</span></li>
+        <li data-at="10.0"><button>不确定</button><span>这次解码不能确定什么</span></li>
+      </ol>
+      <div class="note">
+        <b>示例句</b>：「你不要给别人添麻烦。」<br>
+        这份解码是<b>人工占位</b>（<code>decode.demo-压抑-手工占位.json</code>），
+        不是模型判断；接上模型后同样的位置会显示模型的真实判断。
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>/**
+ * 筑巢 / Nesting · 动画原型共享配置
+ * ------------------------------------------------------------
+ * 所有动画模块共享的常量、颜色、物理参数与 output.schema.json 参数映射。
+ * 变更此处会影响全部模块；模块自身的局部常量写在各自文件内。
+ *
+ * 设计画布：1080 × 1920（竖屏 9:16），运行时按容器等比缩放。
+ * 速度公式以 1080 高画布为基准，实际按 DESIGN_HEIGHT / 1080 缩放。
+ */
+
+const DESIGN_WIDTH = 1080;
+const DESIGN_HEIGHT = 1920;
+const HEIGHT_SCALE = DESIGN_HEIGHT / 1080; // 速度/距离缩放因子
+
+/* ---- 时间线（秒），与 02-体验与分镜.md 对齐 ---- */
+const TIMELINE = {
+  total: 60,
+  phases: [
+    { name: 'idle',     start: 0,  end: 8  },  // 平静人形等待
+    { name: 'enter_a',  start: 8,  end: 20 },  // 第一组蜂群进入
+    { name: 'enter_b',  start: 20, end: 32 },  // 第二组蜂群进入
+    { name: 'weave',    start: 32, end: 47 },  // 两组交织
+    { name: 'settle',   start: 47, end: 57 },  // 沉积薄层
+    { name: 'hold',     start: 57, end: 60 },  // 静止存留
+  ],
+};
+
+/* ---- 颜色 ---- */
+const COLORS = {
+  background: '#0a0a12',
+  // 两组固定、亮度相近的色相；颜色用于识别来源，不编码好坏
+  groupA: { h: 38,  s: 85, l: 62 },  // 暖琥珀
+  groupB: { h: 182, s: 75, l: 60 },  // 冷青蓝
+  humanoid: {
+    fill: 'rgba(20, 22, 35, 0.85)',
+    outline: 'rgba(120, 130, 170, 0.25)',
+    glow: 'rgba(140, 150, 200, 0.08)',
+  },
+  weaveLine: { alpha: 0.55 },
+  depositMesh: { alpha: 0.4 },
+};
+
+/* ---- 蜂群物理（与 03-蜂群与融合规则.md 对齐） ---- */
+const SWARM = {
+  particlesPerGroup: 48,
+  // 速度 = 12 + 60 × energy 像素/秒（1080 高基准），运行时乘 HEIGHT_SCALE
+  baseSpeed: 12,
+  speedRange: 60,
+  // 群体半径 = 20 + 100 × dispersion 像素
+  baseRadius: 20,
+  radiusRange: 100,
+  // 扰动幅度 = 2 + 22 × turbulence 像素
+  baseTurbulence: 2,
+  turbulenceRange: 22,
+  // 残留透明度 = 0.12 + 0.48 × trace
+  baseTraceAlpha: 0.12,
+  traceAlphaRange: 0.48,
+  // 轨迹点数量（影响拖尾长度），与 trace 成比例
+  minTrailPoints: 4,
+  maxTrailPoints: 40,
+  // 粒子大小
+  particleSize: 3.2,
+  particleGlow: 12,
+};
+
+/* ---- 交织与沉积 ---- */
+const WEAVE = {
+  // 连线在 weave 阶段内的淡入时长占比
+  lineFadeInRatio: 0.4,
+  // 沉积在 settle 阶段内的形成时长占比
+  depositFormRatio: 0.5,
+  // 未沉积连线淡出时长占比
+  undepositedFadeRatio: 0.6,
+  // 薄层网格连线宽度
+  meshLineWidth: 1.2,
+  // 结对连线宽度
+  pairLineWidth: 1.6,
+};
+
+/* ---- 文字结构蜂（最小可行性原型） ---- */
+const BEE = {
+  // 一只蜂先消费一段转写文字；后续可由解码层改为 bee spec。
+  maxCharacters: 32,
+  baseBodyWidth: 250,
+  baseBodyHeight: 190,
+  segmentWidth: 7,
+  wingWidth: 112,
+  wingHeight: 58,
+  headRadius: 38,
+  wingbeatHz: 2.2,
+};
+
+/* ---- 人形内部区域（一组椭圆近似身体轮廓，粒子约束在此空间内） ---- */
+const HUMANOID = {
+  // 以画布中心为原点的身体椭圆定义 [cx_offset, cy_offset, rx, ry]
+  // 头部
+  head:   [0, -680, 105, 130],
+  // 颈部
+  neck:   [0, -530, 55, 70],
+  // 上胸
+  chest:  [0, -380, 200, 180],
+  // 下腹
+  abdomen:[0, -120, 175, 200],
+  // 骨盆
+  pelvis: [0, 80, 160, 120],
+  // 左大腿
+  thighL: [-85, 280, 80, 180],
+  // 右大腿
+  thighR: [85, 280, 80, 180],
+  // 左小腿
+  shinL:  [-85, 520, 65, 170],
+  // 右小腿
+  shinR:  [85, 520, 65, 170],
+  // 左上臂
+  armUL:  [-230, -340, 65, 140],
+  // 右上臂
+  armUR:  [230, -340, 65, 140],
+  // 左前臂
+  armLL:  [-250, -140, 55, 130],
+  // 右前臂
+  armLR:  [250, -140, 55, 130],
+};
+
+/* ---- 拆解阶段（整句 → 单元 → 蜂体）---- */
+const DECOMPOSE = {
+  sentenceUntil: 1.6, // 0–1.6s：整句停留，尚未拆开（最初 5s，用户两次反馈节奏太慢）
+  flyUntil: 8,        // 1.6–8s：文字单元逐个飞入腹节带（最初 20s）
+  stagger: 0.45,      // 每个单元延迟出发的比例（按文字顺序）
+};
+
+/* ---- 视野（拉远看到更多蜂）----
+ * 13 秒前保持近距离看这一只；13–27 秒视野拉远，画面里出现其他语言的蜂。 */
+const CAMERA = {
+  holdUntil: 13,      // 这段时间是近景：只有正在生长的这只
+  zoomOutUntil: 27,   // 之后拉到最远
+  startScale: 1,
+  endScale: 0.44,     // 拉太远会显得空：0.44 下三只蜂仍能占住画面
+};
+
+/* ---- 群蜂布局（每只蜂代表一段语言）---- */
+const SWARM_VIEW = {
+  baseRadius: 560,    // 第一只「别的蜂」离中心的距离（世界坐标）
+  radiusStep: 210,    // 每多一只往外挪一点
+  appearGap: 3,       // 相邻两只出现的间隔（秒）
+  firstAppearAt: 15,  // 第一只「别的蜂」出现的时间
+  birthSeconds: 2.4,  // 单只蜂出现的过渡时长
+  minScale: 0.82,     // 别的蜂不能太小，否则拉远后看不见
+  maxScale: 1.0,
+};
+
+/* ---- 蜂体规格默认值（与 10-语言解码/derive_bee.py 的派生字段一一对应）----
+ * decoded=false 表示语气/含义未经模型解码，蜂体为中性默认值，界面必须标注。 */
+const NEUTRAL_BEE = {
+  wingbeatHz: 2.2,
+  tension: 0.5,
+  spacing: 1.0,
+  hue: 38,
+  posture: 'level',
+  bodyScale: 1.0,
+  decoded: false,
+  caption: '',
+};
+
+/* ---- 语言传播涟漪（一句话说出口，离开身体，再也收不回来）----
+ * 蜂体成形后，从蜂的位置向外推出同心波纹，扩散到画面边缘消失。
+ * 波面上的短笔画呼应蜂体的会徽风笔画轮廓：语言离开身体时笔画已被拆散，
+ * 所以这里只取最简形态（线段 / 点 / 弧），不再对应具体的字。
+ *
+ * 派生关系（可追溯）：
+ *   波速   = baseSpeed + speedRange × (wingbeatHz − 1.6) / 1.8
+ *            wingbeatHz 由语气强度派生（1.6 + 1.8 × intensity）
+ *            → 说得越激动，语言传得越快
+ *   波强度 = 0.45 + 0.55 × tension
+ *            tension 由语气强度与分量派生（0.5 × intensity + 0.5 × weight）
+ *            → 分量越重，波越粗、越持久
+ */
+const RIPPLE = {
+  firstAt: 10.5,      // 第一圈发出的时间（蜂体基本成形：8s 达 75%，13s 完全成形）
+  gap: 2.4,           // 相邻两圈的间隔（秒）
+  count: 4,           // 一共几圈
+  baseSpeed: 165,     // 扩散速度基准（像素/秒）
+  speedRange: 135,    // 语气强度带来的速度增量（wingbeatHz 1.6→3.4 映射为 0→135）
+  maxRadius: 1180,    // 扩散到这个半径即消失（到画面边缘之外）
+  baseWidth: 4.6,     // 起始线宽
+  strokeGap: 30,      // 圆周上每隔多少像素放一个短笔画（虚线感）
+  strokeLen: 14,      // 短笔画长度
+  minAlpha: 0.85,     // 起始不透明度
+  originYRatio: 0.46, // 波心在画面高度上的比例（与蜂的稳定位置一致）
+};
+
+/* ---- AI 的理解过程（把「机器怎么听懂这句话」画出来）----
+ * 观众说完一句话，画布上部依次展开四层分析：
+ *   语气扫描 → 含义提取 → 分段归位 → 不确定性
+ * 每一层都是解码层真实给出的判断，不是装饰；未接入模型时只显示
+ * 「听到」与「未解码」，绝不编造语气与含义（与项目红线一致）。
+ *
+ * 无状态：每层的展开程度只由「当前时间 − 该层起始」算出，
+ * 因此暂停会冻结、倒退会收回、重播会清空。
+ */
+const READING = {
+  toneFrom: 2.5, toneTo: 5.2,        // 语气扫描：10 个语气词轮转后停在选中项
+  meaningFrom: 5.2, meaningTo: 7.6,  // 含义提取：概括 / 方向 / 分量 / 关键词
+  segmentFrom: 7.6, segmentTo: 10.0, // 分段归位：每段标出部位与分量
+  doubtFrom: 10.0, doubtTo: 11.6,    // 不确定性：这次解码不能确定什么
+  fadeOutAt: 13.2,                   // 之后整层淡出，把画面还给蜂与涟漪
+  bandTop: 208,                      // 分析带顶部 y（蜂在 0.46 高度，互不遮挡）
+  rowGap: 64,                        // 层与层之间的行距
+  labelSize: 18,                     // 层名（听到 / 语气 / 含义 / 分段）
+  bodySize: 23,                      // 正文（判断内容）
+  noteSize: 15,                      // 小字（证据 / 不确定性）
+  toneSize: 21,                      // 语气词
+  scanSeconds: 1.8,                  // 扫描针扫完 10 个词所需时间
+  barWidth: 210,                     // 强度 / 节奏 / 分量的刻度条宽度
+  barHeight: 5,
+};
+
+/* ---- 工具函数 ---- */
+
+/** 将 0-1 参数映射为实际速度（像素/秒，已按画布缩放） */
+function speedFor(energy) {
+  return (SWARM.baseSpeed + SWARM.speedRange * energy) * HEIGHT_SCALE;
+}
+
+/** 将 0-1 参数映射为群体半径（像素，已按画布缩放） */
+function radiusFor(dispersion) {
+  return (SWARM.baseRadius + SWARM.radiusRange * dispersion) * HEIGHT_SCALE;
+}
+
+/** 将 0-1 参数映射为扰动幅度（像素，已按画布缩放） */
+function turbulenceFor(turbulence) {
+  return (SWARM.baseTurbulence + SWARM.turbulenceRange * turbulence) * HEIGHT_SCALE;
+}
+
+/** 将 0-1 参数映射为残留透明度 */
+function traceAlphaFor(trace) {
+  return SWARM.baseTraceAlpha + SWARM.traceAlphaRange * trace;
+}
+
+/** 将 0-1 参数映射为轨迹点数量 */
+function trailPointsFor(trace) {
+  return roundHalfUp(
+    SWARM.minTrailPoints + (SWARM.maxTrailPoints - SWARM.minTrailPoints) * trace
+  );
+}
+
+/** HSL 颜色对象转 css 字符串 */
+function hsl(c, alpha) {
+  const a = alpha === undefined ? 1 : alpha;
+  return `hsla(${c.h}, ${c.s}%, ${c.l}%, ${a})`;
+}
+
+/** 混合两个 HSL 颜色（简单线性插值） */
+function mixHSL(c1, c2, t) {
+  return {
+    h: c1.h + (c2.h - c1.h) * t,
+    s: c1.s + (c2.s - c1.s) * t,
+    l: c1.l + (c2.l - c1.l) * t,
+  };
+}
+
+/** 限制值在 [min, max] */
+function clamp(v, min, max) {
+  return Math.max(min, Math.min(max, v));
+}
+
+/**
+ * 与 Python 端 build_score.round_half_up 语义一致的取整：.5 一律进位（输入为非负数）。
+ * 项目中所有跨语言共享的计数（结对数、沉积数）必须走本函数，
+ * 不得使用 Math.round 以外的写法，也不得依赖 Python 内置 round（银行家舍入）。
+ * 修改须同步 09-声音设计/build_score.py 与 web/audio/audio.mjs。
+ */
+function roundHalfUp(value) {
+  return Math.floor(Number(value) + 0.5);
+}
+
+/** 线性插值 */
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+/** 平滑插值（smoothstep） */
+function smoothstep(t) {
+  return t * t * (3 - 2 * t);
+}
+
+/** 判断点是否在人形内部任意椭圆中 */
+function isInsideHumanoid(x, y) {
+  const cx = DESIGN_WIDTH / 2;
+  const cy = DESIGN_HEIGHT / 2;
+  for (const key of Object.keys(HUMANOID)) {
+    const [ox, oy, rx, ry] = HUMANOID[key];
+    const dx = (x - (cx + ox)) / rx;
+    const dy = (y - (cy + oy)) / ry;
+    if (dx * dx + dy * dy <= 1) return true;
+  }
+  return false;
+}
+
+/** 将点推回人形内部（若在外部），返回修正后的坐标 */
+function constrainToHumanoid(x, y) {
+  if (isInsideHumanoid(x, y)) return { x, y };
+  // 找到最近的椭圆中心，朝该方向推回
+  const cx = DESIGN_WIDTH / 2;
+  const cy = DESIGN_HEIGHT / 2;
+  let bestDist = Infinity;
+  let bestX = cx;
+  let bestY = cy;
+  for (const key of Object.keys(HUMANOID)) {
+    const [ox, oy, rx, ry] = HUMANOID[key];
+    const ex = cx + ox;
+    const ey = cy + oy;
+    const d = (x - ex) * (x - ex) + (y - ey) * (y - ey);
+    if (d < bestDist) {
+      bestDist = d;
+      bestX = ex;
+      bestY = ey;
+    }
+  }
+  // 朝最近椭圆中心移动 10%
+  return {
+    x: x + (bestX - x) * 0.1,
+    y: y + (bestY - y) * 0.1,
+  };
+}
+
+/* ---- 模块导出（浏览器全局） ---- */
+window.NestingConfig = {
+  DESIGN_WIDTH,
+  DESIGN_HEIGHT,
+  HEIGHT_SCALE,
+  TIMELINE,
+  COLORS,
+  SWARM,
+  WEAVE,
+  BEE,
+  DECOMPOSE,
+  CAMERA,
+  SWARM_VIEW,
+  NEUTRAL_BEE,
+  RIPPLE,
+  READING,
+  HUMANOID,
+  speedFor,
+  radiusFor,
+  turbulenceFor,
+  traceAlphaFor,
+  trailPointsFor,
+  hsl,
+  mixHSL,
+  clamp,
+  roundHalfUp,
+  lerp,
+  smoothstep,
+  isInsideHumanoid,
+  constrainToHumanoid,
+};
+</script>
+<script>/**
+ * 筑巢 / Nesting · AI 的理解过程
+ * ------------------------------------------------------------
+ * 把「机器是怎么听懂这句话的」画出来——不是结果，是过程。
+ *
+ * 观众说完一句话，画布上部依次展开四层分析：
+ *   1. 语气扫描：10 个语气词横排，扫描针扫过，停在 AI 选中的那一个（附强度/节奏与判断依据）
+ *   2. 含义提取：一句话概括 + 力的方向 + 分量 + 关键词
+ *   3. 分段归位：原句被切成几段，每段标出部位与分量
+ *   4. 不确定性：这次解码不能确定什么（机器也会不确定，照样画出来）
+ *
+ * 每一层显示的都是解码层真实给出的判断（来自 beeSpec.decode），不是装饰。
+ * 未接入模型时只显示「未解码」，绝不编造语气与含义——与项目红线一致。
+ *
+ * 无状态：每层的展开程度只由「当前时间 − 该层起始」算出，不保存中间状态。
+ * 因此暂停会冻结、倒退会收回、重播会清空。
+ *
+ * 模块接口与 bee / ripple / hive / waveform 一致：constructor / update / draw / reset。
+ */
+(function () {
+  'use strict';
+
+  // 与 10-语言解码/derive_bee.py 的 TONE_LABELS 必须逐字一致（改一处须同步另一处）
+  const TONE_LABELS = ['平稳', '急促', '迟疑', '压抑', '轻快', '沉重', '克制', '激动', '疏离', '温和'];
+
+  // 分段部位的图形标记（会徽风：最简几何形，不写字）
+  const ROLE_MARK = {
+    head: 'circle', wing: 'wave', thorax: 'square', abdomen: 'bar', stinger: 'triangle',
+  };
+
+  class ReadingModule {
+    constructor(params, config, sourceText = '', spec = null) {
+      this.params = params || {};
+      this.config = config;
+      const fromParams = (params && (params.beeSpec || params.bee)) || null;
+      this.spec = Object.assign({}, config.NEUTRAL_BEE, fromParams || {}, spec || {});
+      // 模型的原始判断；未接入模型时为 null
+      this.decode = this.spec.decode || null;
+      this.sourceText = typeof sourceText === 'string' ? sourceText : '';
+      this.reset();
+    }
+
+    reset() {
+      this.currentTime = 0;
+      this.phase = 'idle';
+    }
+
+    update(dt, phase, phaseProgress, totalTime) {
+      this.currentTime = Math.max(0, Number(totalTime) || 0);
+      this.phase = phase || 'idle';
+    }
+
+    /** 某一层在当前时刻的展开进度 0–1（无状态）。 */
+    layerProgress(from, to, time = this.currentTime) {
+      if (time <= from) return 0;
+      if (time >= to) return 1;
+      return (time - from) / (to - from);
+    }
+
+    /** 整层是否已淡出（把画面还给蜂与涟漪）。 */
+    isGone(time = this.currentTime) {
+      return time >= this.config.READING.fadeOutAt;
+    }
+
+    draw(ctx) {
+      const cfg = this.config.READING;
+      const time = this.currentTime;
+      if (this.isGone(time)) return;
+
+      const fade = 1 - this.config.smoothstep(
+        this.config.clamp((time - cfg.doubtTo) / (cfg.fadeOutAt - cfg.doubtTo), 0, 1));
+      if (fade <= 0.01) return;
+
+      ctx.save();
+      const hue = this.spec.hue;
+      const left = 150;
+
+      // 未接入模型：只诚实标注，一句判断都不画
+      if (!this.decode) {
+        if (time < cfg.toneFrom) { ctx.restore(); return; }
+        this._label(ctx, '未解码', left, cfg.bandTop, hue, fade);
+        ctx.globalAlpha = fade * 0.75;
+        ctx.font = cfg.bodySize + 'px serif';
+        ctx.fillStyle = this.config.hsl({ h: hue, s: 22, l: 60 }, 1);
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('语气与含义未接入模型，没有判断可显示', left + 96, cfg.bandTop);
+        ctx.restore();
+        return;
+      }
+
+      let y = cfg.bandTop;
+      const tone = this.decode.tone;
+      const meaning = this.decode.meaning;
+      const segments = this.decode.segments;
+
+      if (tone) {
+        const p = this.layerProgress(cfg.toneFrom, cfg.toneTo, time);
+        if (p > 0) this._drawTone(ctx, tone, left, y, hue, fade, p, time);
+        y += cfg.rowGap;
+      }
+      if (meaning) {
+        const p = this.layerProgress(cfg.meaningFrom, cfg.meaningTo, time);
+        if (p > 0) this._drawMeaning(ctx, meaning, left, y, hue, fade, p);
+        y += cfg.rowGap;
+      }
+      if (segments && segments.length) {
+        const p = this.layerProgress(cfg.segmentFrom, cfg.segmentTo, time);
+        if (p > 0) this._drawSegments(ctx, segments, left, y, hue, fade, p);
+        y += cfg.rowGap;
+      }
+      if (this.decode.uncertainty) {
+        const p = this.layerProgress(cfg.doubtFrom, cfg.doubtTo, time);
+        if (p > 0) this._drawDoubt(ctx, this.decode.uncertainty, left, y, hue, fade, p);
+      }
+
+      ctx.restore();
+    }
+
+    /* ---- 第 1 层 · 语气扫描 ---- */
+    _drawTone(ctx, tone, x, y, hue, fade, p, time) {
+      const cfg = this.config.READING;
+      this._label(ctx, '语气', x, y, hue, fade);
+
+      const gap = 64;
+      const startX = x + 96;
+      const scanP = this.config.clamp((time - cfg.toneFrom) / cfg.scanSeconds, 0, 1);
+      const chosen = TONE_LABELS.indexOf(tone.label);
+
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (let i = 0; i < TONE_LABELS.length; i += 1) {
+        const isChosen = i === chosen;
+        const passed = (i / TONE_LABELS.length) <= scanP + 0.02;
+        const settled = scanP >= 1;
+        const a = fade * (settled ? (isChosen ? 0.95 : 0.16) : (passed ? 0.8 : 0.22));
+        ctx.globalAlpha = a;
+        ctx.font = (settled && isChosen ? cfg.toneSize + 5 : cfg.toneSize) + 'px serif';
+        ctx.fillStyle = this.config.hsl(
+          { h: hue, s: isChosen ? 70 : 24, l: isChosen ? 68 : 52 }, 1);
+        ctx.fillText(TONE_LABELS[i], startX + i * gap, y);
+      }
+
+      if (scanP < 1) {
+        const sx = startX + scanP * (TONE_LABELS.length - 1) * gap;
+        ctx.globalAlpha = fade * 0.85;
+        ctx.strokeStyle = this.config.hsl({ h: hue, s: 72, l: 74 }, 1);
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(sx, y - 19);
+        ctx.lineTo(sx, y + 19);
+        ctx.stroke();
+      }
+
+      const barY = y + 32;
+      this._bar(ctx, startX, barY, tone.intensity, cfg.barWidth, hue, fade * p, '强度');
+      this._bar(ctx, startX + cfg.barWidth + 56, barY, tone.pace,
+                cfg.barWidth * 0.72, hue, fade * p, '节奏');
+
+      if (p > 0.45 && tone.evidence) {
+        ctx.globalAlpha = fade * ((p - 0.45) / 0.55) * 0.5;
+        ctx.font = cfg.noteSize + 'px serif';
+        ctx.fillStyle = this.config.hsl({ h: hue, s: 16, l: 56 }, 1);
+        ctx.textAlign = 'left';
+        ctx.fillText('凭什么：' + tone.evidence, startX, barY + 27);
+      }
+    }
+
+    /* ---- 第 2 层 · 含义提取 ---- */
+    _drawMeaning(ctx, meaning, x, y, hue, fade, p) {
+      const cfg = this.config.READING;
+      this._label(ctx, '含义', x, y, hue, fade);
+      const sx = x + 96;
+
+      ctx.globalAlpha = fade * p * 0.92;
+      ctx.font = cfg.bodySize + 'px serif';
+      ctx.fillStyle = this.config.hsl({ h: hue, s: 42, l: 70 }, 1);
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(meaning.gist || '', sx, y);
+
+      const row2 = y + 34;
+      this._arrow(ctx, sx + 10, row2, meaning.direction, hue, fade * p);
+      const barX = sx + 54;
+      this._bar(ctx, barX, row2 - 2, meaning.weight, cfg.barWidth * 0.62, hue, fade * p, '分量');
+
+      if (meaning.keywords && meaning.keywords.length) {
+        ctx.globalAlpha = fade * p * 0.62;
+        ctx.font = cfg.noteSize + 'px serif';
+        ctx.fillStyle = this.config.hsl({ h: hue, s: 20, l: 58 }, 1);
+        ctx.fillText('关键词：' + meaning.keywords.join('、'),
+                     barX + cfg.barWidth * 0.62 + 34, row2);
+      }
+    }
+
+    /* ---- 第 3 层 · 分段归位 ---- */
+    _drawSegments(ctx, segments, x, y, hue, fade, p) {
+      const cfg = this.config.READING;
+      this._label(ctx, '分段', x, y, hue, fade);
+      const sx = x + 96;
+      let cur = sx;
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'left';
+      for (let i = 0; i < segments.length; i += 1) {
+        const seg = segments[i];
+        const shown = this.config.clamp((p - i * 0.05) / 0.45, 0, 1);
+        if (shown <= 0.01) break;
+        ctx.globalAlpha = fade * shown * 0.9;
+        ctx.font = cfg.bodySize + 'px serif';
+        ctx.fillStyle = this.config.hsl({ h: hue, s: 48, l: 68 }, 1);
+        ctx.fillText(seg.text, cur, y);
+
+        const measured = ctx.measureText ? ctx.measureText(seg.text) : null;
+        const w = (measured && measured.width) ? measured.width : seg.text.length * cfg.bodySize;
+        cur += w + 18;
+        this._mark(ctx, cur + 8, y, ROLE_MARK[seg.role] || 'bar', hue, fade * shown);
+        cur += 26;
+        this._bar(ctx, cur, y - 2, seg.weight, 44, hue, fade * shown, null);
+        cur += 44 + 28;
+        if (cur > this.config.DESIGN_WIDTH - 150) break;
+      }
+    }
+
+    /* ---- 第 4 层 · 不确定性 ---- */
+    _drawDoubt(ctx, text, x, y, hue, fade, p) {
+      const cfg = this.config.READING;
+      this._label(ctx, '不确定', x, y, hue, fade);
+      ctx.globalAlpha = fade * p * 0.48;
+      ctx.font = cfg.noteSize + 'px serif';
+      ctx.fillStyle = this.config.hsl({ h: hue, s: 10, l: 54 }, 1);
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text || '', x + 96, y);
+    }
+
+    /* ---- 会徽风的零件 ---- */
+
+    _label(ctx, text, x, y, hue, fade) {
+      ctx.globalAlpha = fade * 0.4;
+      ctx.font = this.config.READING.labelSize + 'px sans-serif';
+      ctx.fillStyle = this.config.hsl({ h: hue, s: 16, l: 54 }, 1);
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, x + 76, y);
+    }
+
+    /** 刻度条：底槽 + 填充 + 末端短竖线（会徽风的刻度端点）。 */
+    _bar(ctx, x, y, value, width, hue, alpha, name) {
+      const cfg = this.config.READING;
+      const v = this.config.clamp(value, 0, 1);
+      ctx.globalAlpha = alpha * 0.18;
+      ctx.fillStyle = this.config.hsl({ h: hue, s: 20, l: 50 }, 1);
+      ctx.fillRect(x, y, width, cfg.barHeight);
+      ctx.globalAlpha = alpha * 0.85;
+      ctx.fillStyle = this.config.hsl({ h: hue, s: 58, l: 62 }, 1);
+      ctx.fillRect(x, y, width * v, cfg.barHeight);
+      ctx.fillRect(x + width * v - 1, y - 4, 2, cfg.barHeight + 8);
+      if (name) {
+        ctx.globalAlpha = alpha * 0.5;
+        ctx.font = cfg.noteSize + 'px sans-serif';
+        ctx.fillStyle = this.config.hsl({ h: hue, s: 14, l: 52 }, 1);
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(name, x - 12, y + 2);
+      }
+    }
+
+    /** 力的方向：向内收 / 向外放 / 平。 */
+    _arrow(ctx, x, y, direction, hue, alpha) {
+      ctx.globalAlpha = alpha * 0.8;
+      ctx.strokeStyle = this.config.hsl({ h: hue, s: 55, l: 64 }, 1);
+      ctx.lineWidth = 2.2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      if (direction === 'inward') {
+        ctx.moveTo(x, y - 9); ctx.lineTo(x, y + 9);
+        ctx.moveTo(x - 5, y + 4); ctx.lineTo(x, y + 9); ctx.lineTo(x + 5, y + 4);
+      } else if (direction === 'outward') {
+        ctx.moveTo(x, y + 9); ctx.lineTo(x, y - 9);
+        ctx.moveTo(x - 5, y - 4); ctx.lineTo(x, y - 9); ctx.lineTo(x + 5, y - 4);
+      } else {
+        ctx.moveTo(x - 8, y); ctx.lineTo(x + 8, y);
+      }
+      ctx.stroke();
+    }
+
+    /** 部位标记：圆 / 波 / 方 / 条 / 三角。 */
+    _mark(ctx, x, y, kind, hue, alpha) {
+      ctx.globalAlpha = alpha * 0.7;
+      ctx.strokeStyle = this.config.hsl({ h: hue, s: 40, l: 60 }, 1);
+      ctx.lineWidth = 1.8;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      if (kind === 'circle') {
+        ctx.arc(x, y, 6, 0, Math.PI * 2);
+      } else if (kind === 'wave') {
+        ctx.moveTo(x - 7, y + 2);
+        ctx.quadraticCurveTo(x - 3, y - 4, x, y + 1);
+        ctx.quadraticCurveTo(x + 3, y - 4, x + 7, y + 2);
+      } else if (kind === 'square') {
+        ctx.rect(x - 5.5, y - 5.5, 11, 11);
+      } else if (kind === 'triangle') {
+        ctx.moveTo(x, y - 7); ctx.lineTo(x + 6, y + 5); ctx.lineTo(x - 6, y + 5); ctx.closePath();
+      } else {
+        ctx.moveTo(x - 8, y); ctx.lineTo(x + 8, y);
+      }
+      ctx.stroke();
+    }
+  }
+
+  window.ReadingModule = ReadingModule;
+})();
+</script>
+<script>
+const config = window.NestingConfig;
+const DECODE = {
+  "version": "0.1",
+  "transcript": "你不要给别人添麻烦。",
+  "tone": {
+    "label": "压抑",
+    "intensity": 0.58,
+    "pace": 0.34,
+    "evidence": "短句、否定祈使、句末下压（人工占位，非模型判断）"
+  },
+  "meaning": {
+    "gist": "被要求不要成为别人的负担。",
+    "direction": "inward",
+    "weight": 0.72,
+    "keywords": [
+      "不要",
+      "麻烦"
+    ]
+  },
+  "segments": [
+    {
+      "text": "你不要",
+      "role": "head",
+      "weight": 0.35
+    },
+    {
+      "text": "给别人",
+      "role": "abdomen",
+      "weight": 0.3
+    },
+    {
+      "text": "添麻烦",
+      "role": "thorax",
+      "weight": 0.62
+    },
+    {
+      "text": "。",
+      "role": "stinger",
+      "weight": 0.2
+    }
+  ],
+  "uncertainty": "演示素材：由人工编写的解码结果，未经模型判断，不能代表任何人的真实处境。"
+}
+;
+const mod = new window.ReadingModule({}, config, DECODE.transcript, {
+  decoded: true, hue: 30.6, decode: DECODE,
+});
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const seek = document.getElementById('seek');
+const clock = document.getElementById('clock');
+const playBtn = document.getElementById('play');
+const items = [...document.querySelectorAll('#layers li')];
+
+// 按容器高度缩放竖屏画布
+function fit() {
+  const h = Math.min(660, window.innerHeight - 190);
+  cv.style.height = h + 'px';
+  cv.style.width = (h * 1080 / 1920) + 'px';
+}
+fit();
+window.addEventListener('resize', fit);
+
+function render(t) {
+  mod.update(0, 'weave', 0.5, t);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = '#0e0d0c';
+  ctx.fillRect(0, 0, 1080, 1920);
+  // 蜂的位置标一下，说明读解带与蜂不重叠
+  ctx.globalAlpha = 0.16;
+  ctx.strokeStyle = '#c9a06a';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(540, 960, 150, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  mod.draw(ctx);
+  clock.textContent = t.toFixed(2) + 's';
+  items.forEach(li => {
+    const at = parseFloat(li.dataset.at);
+    li.classList.toggle('on', t >= at && t < at + 2.4);
+  });
+}
+
+let playing = false, last = 0;
+function loop(now) {
+  if (playing) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    let t = parseFloat(seek.value) + dt;
+    if (t > 16) { t = 0; }
+    seek.value = t;
+    render(t);
+  }
+  last = now;
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+seek.addEventListener('input', () => render(parseFloat(seek.value)));
+playBtn.addEventListener('click', () => {
+  playing = !playing;
+  playBtn.textContent = playing ? '暂停' : '播放';
+  last = performance.now();
+});
+items.forEach(li => li.querySelector('button').addEventListener('click', () => {
+  seek.value = li.dataset.at;
+  render(parseFloat(seek.value));
+}));
+
+render(0);
+</script>
+</body>
+</html>

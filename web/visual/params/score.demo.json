@@ -1,0 +1,319 @@
+{
+  "version": "0.1",
+  "duration_seconds": 60,
+  "master_gain": 0.792,
+  "derived_from": {
+    "output_sha256": "40030fdce87346de31ffdc39a12cb270dfea7649e3f292e82ed4edef5f121850",
+    "source": "demo-手工占位"
+  },
+  "phases": [
+    {
+      "id": "calm",
+      "start": 0.0,
+      "end": 8.0,
+      "label": "静置"
+    },
+    {
+      "id": "swarm-a",
+      "start": 8.0,
+      "end": 20.0,
+      "label": "第一组进入"
+    },
+    {
+      "id": "swarm-b",
+      "start": 20.0,
+      "end": 32.0,
+      "label": "第二组进入"
+    },
+    {
+      "id": "weave",
+      "start": 32.0,
+      "end": 47.0,
+      "label": "交织"
+    },
+    {
+      "id": "settle",
+      "start": 47.0,
+      "end": 57.0,
+      "label": "沉积"
+    },
+    {
+      "id": "residual",
+      "start": 57.0,
+      "end": 60.0,
+      "label": "存留"
+    }
+  ],
+  "layers": [
+    {
+      "id": "bed",
+      "kind": "drone",
+      "source_event": "none",
+      "start": 0.0,
+      "end": 60.0,
+      "base_frequency": 55,
+      "grain_rate": 0,
+      "gain": 0.15
+    },
+    {
+      "id": "swarm-a",
+      "kind": "texture",
+      "source_event": "a",
+      "start": 8.0,
+      "end": 57.0,
+      "base_frequency": 220,
+      "grain_rate": 5.5,
+      "gain": 0.28
+    },
+    {
+      "id": "swarm-b",
+      "kind": "texture",
+      "source_event": "b",
+      "start": 20.0,
+      "end": 57.0,
+      "base_frequency": 330,
+      "grain_rate": 8.3,
+      "gain": 0.28
+    },
+    {
+      "id": "weave-pulse",
+      "kind": "pulse",
+      "source_event": "none",
+      "start": 32.0,
+      "end": 47.0,
+      "base_frequency": 440,
+      "grain_rate": 1.7,
+      "gain": 0.22
+    },
+    {
+      "id": "settle-bloom",
+      "kind": "bloom",
+      "source_event": "none",
+      "start": 47.0,
+      "end": 57.0,
+      "base_frequency": 275,
+      "grain_rate": 0,
+      "gain": 0.3
+    }
+  ],
+  "events": [
+    {
+      "id": "cue-01",
+      "t": 0,
+      "layer": "bed",
+      "cue": "showcase-start",
+      "gain": 0
+    },
+    {
+      "id": "cue-02",
+      "t": 8,
+      "layer": "swarm-a",
+      "cue": "swarm-a-enter",
+      "gain": 0
+    },
+    {
+      "id": "cue-03",
+      "t": 20,
+      "layer": "swarm-b",
+      "cue": "swarm-b-enter",
+      "gain": 0
+    },
+    {
+      "id": "cue-04",
+      "t": 32,
+      "layer": "weave-pulse",
+      "cue": "weave-start",
+      "gain": 0
+    },
+    {
+      "id": "cue-05",
+      "t": 47,
+      "layer": "settle-bloom",
+      "cue": "settle-start",
+      "gain": 0
+    },
+    {
+      "id": "cue-06",
+      "t": 57,
+      "layer": "bed",
+      "cue": "residual-start",
+      "gain": 0
+    },
+    {
+      "id": "deposit-01",
+      "t": 47.2,
+      "layer": "settle-bloom",
+      "cue": "deposit",
+      "gain": 0.3
+    },
+    {
+      "id": "deposit-02",
+      "t": 47.6,
+      "layer": "settle-bloom",
+      "cue": "deposit",
+      "gain": 0.3
+    },
+    {
+      "id": "deposit-03",
+      "t": 48.0,
+      "layer": "settle-bloom",
+      "cue": "deposit",
+      "gain": 0.3
+    },
+    {
+      "id": "deposit-04",
+      "t": 48.4,
+      "layer": "settle-bloom",
+      "cue": "deposit",
+      "gain": 0.3
+    },
+    {
+      "id": "deposit-05",
+      "t": 48.8,
+      "layer": "settle-bloom",
+      "cue": "deposit",
+      "gain": 0.3
+    },
+    {
+      "id": "deposit-06",
+      "t": 49.2,
+      "layer": "settle-bloom",
+      "cue": "deposit",
+      "gain": 0.3
+    },
+    {
+      "id": "deposit-07",
+      "t": 49.6,
+      "layer": "settle-bloom",
+      "cue": "deposit",
+      "gain": 0.3
+    },
+    {
+      "id": "deposit-08",
+      "t": 50.0,
+      "layer": "settle-bloom",
+      "cue": "deposit",
+      "gain": 0.3
+    },
+    {
+      "id": "deposit-09",
+      "t": 50.4,
+      "layer": "settle-bloom",
+      "cue": "deposit",
+      "gain": 0.3
+    },
+    {
+      "id": "deposit-10",
+      "t": 50.8,
+      "layer": "settle-bloom",
+      "cue": "deposit",
+      "gain": 0.3
+    },
+    {
+      "id": "deposit-11",
+      "t": 51.2,
+      "layer": "settle-bloom",
+      "cue": "deposit",
+      "gain": 0.3
+    },
+    {
+      "id": "deposit-12",
+      "t": 51.6,
+      "layer": "settle-bloom",
+      "cue": "deposit",
+      "gain": 0.3
+    },
+    {
+      "id": "deposit-13",
+      "t": 52.0,
+      "layer": "settle-bloom",
+      "cue": "deposit",
+      "gain": 0.3
+    },
+    {
+      "id": "deposit-14",
+      "t": 52.4,
+      "layer": "settle-bloom",
+      "cue": "deposit",
+      "gain": 0.3
+    },
+    {
+      "id": "deposit-15",
+      "t": 52.8,
+      "layer": "settle-bloom",
+      "cue": "deposit",
+      "gain": 0.3
+    },
+    {
+      "id": "deposit-16",
+      "t": 53.2,
+      "layer": "settle-bloom",
+      "cue": "deposit",
+      "gain": 0.3
+    },
+    {
+      "id": "deposit-17",
+      "t": 53.6,
+      "layer": "settle-bloom",
+      "cue": "deposit",
+      "gain": 0.3
+    },
+    {
+      "id": "deposit-18",
+      "t": 54.0,
+      "layer": "settle-bloom",
+      "cue": "deposit",
+      "gain": 0.3
+    },
+    {
+      "id": "deposit-19",
+      "t": 54.4,
+      "layer": "settle-bloom",
+      "cue": "deposit",
+      "gain": 0.3
+    },
+    {
+      "id": "deposit-20",
+      "t": 54.8,
+      "layer": "settle-bloom",
+      "cue": "deposit",
+      "gain": 0.3
+    },
+    {
+      "id": "deposit-21",
+      "t": 55.2,
+      "layer": "settle-bloom",
+      "cue": "deposit",
+      "gain": 0.3
+    },
+    {
+      "id": "deposit-22",
+      "t": 55.6,
+      "layer": "settle-bloom",
+      "cue": "deposit",
+      "gain": 0.3
+    },
+    {
+      "id": "deposit-23",
+      "t": 56.0,
+      "layer": "settle-bloom",
+      "cue": "deposit",
+      "gain": 0.3
+    },
+    {
+      "id": "deposit-24",
+      "t": 56.4,
+      "layer": "settle-bloom",
+      "cue": "deposit",
+      "gain": 0.3
+    },
+    {
+      "id": "deposit-25",
+      "t": 56.8,
+      "layer": "settle-bloom",
+      "cue": "deposit",
+      "gain": 0.3
+    }
+  ],
+  "notes": "由 build_score.py 按 02 分镜与 03 规则的固定公式从转译输出推导；数值为首轮起点，音色与现场音量另行调整。占位来源不冒充真实 AI 结果。"
+}

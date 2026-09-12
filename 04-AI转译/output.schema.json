@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "version": {
+      "const": "0.1"
+    },
+    "events": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "energy": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "dispersion": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "turbulence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "trace": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "rationale": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "energy",
+          "dispersion",
+          "turbulence",
+          "trace",
+          "rationale"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "interaction": {
+      "type": "object",
+      "properties": {
+        "weave": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "settle": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "explanation": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "weave",
+        "settle",
+        "explanation"
+      ],
+      "additionalProperties": false
+    },
+    "uncertainty": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "version",
+    "events",
+    "interaction",
+    "uncertainty"
+  ],
+  "additionalProperties": false
+}

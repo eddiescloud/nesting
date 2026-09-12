@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "version": {
+      "const": "0.1"
+    },
+    "duration_seconds": {
+      "const": 60
+    },
+    "master_gain": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "derived_from": {
+      "type": "object",
+      "properties": {
+        "output_sha256": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "output_sha256",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "phases": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "start": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 60
+          },
+          "end": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 60
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "start",
+          "end",
+          "label"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "layers": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "source_event": {
+            "type": "string"
+          },
+          "start": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 60
+          },
+          "end": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 60
+          },
+          "base_frequency": {
+            "type": "number",
+            "minimum": 20,
+            "maximum": 2000
+          },
+          "grain_rate": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 30
+          },
+          "gain": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "source_event",
+          "start",
+          "end",
+          "base_frequency",
+          "grain_rate",
+          "gain"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "events": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 54,
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "t": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 60
+          },
+          "layer": {
+            "type": "string"
+          },
+          "cue": {
+            "type": "string"
+          },
+          "gain": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "required": [
+          "id",
+          "t",
+          "layer",
+          "cue",
+          "gain"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "version",
+    "duration_seconds",
+    "master_gain",
+    "derived_from",
+    "phases",
+    "layers",
+    "events",
+    "notes"
+  ],
+  "additionalProperties": false
+}
