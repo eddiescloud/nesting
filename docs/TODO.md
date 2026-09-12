@@ -37,7 +37,7 @@
 - [ ] P0：观众理解测试、说明、备份录屏及真实创作证据整理。
 - [x] 清理 08-动画原型/ 残留目录（2026-09-11 完成）。
 - [x] P1：删除 `08-视觉原型/{js,css,index.html,params}` 重复副本（2026-09-11 完成，用户确认）。`08-视觉原型/` 现仅含 README.md 与两个测试文件；两个测试均从 `../web/visual` 加载，删除后 128 项测试仍全过。备份在 `/tmp/nesting-cleanup-backup-20260911`。
-- [x] P1：用户于 2026-09-12 明确授权，将本项目建成独立 Git 仓库并发布到 `eddiescloud/nesting` private 远端；提交只限项目目录，隐藏工具记忆、本地密钥和缓存不纳入。
+- [x] P1：用户于 2026-09-12 明确授权，将本项目建成独立 Git 仓库并发布到 `eddiescloud/nesting`；最初为 private，随后按用户要求改为 public。提交只限项目目录，隐藏工具记忆、本地密钥和缓存不纳入。
 - [ ] P2：相位表仍为 3 份副本（`build_score.py` / `session.mjs` / `web/visual/js/config.js`）加 3 套命名（calm·swarm-a… / opening·first… / idle·enter_a…）。2026-09-11 已加零风险守卫 `test_score.py::test_phase_table_consistent_across_modules`（任一副本漂移即失败）。真正收敛为单一来源需让浏览器端从 JSON 异步读取，会改动同步加载的共享 config，须单独设计。
 - [x] P2：清理死代码（2026-09-11 完成，经复核修正判断）——删除 `audio.mjs` 未被引用的 `PHASES` 常量、`swarm.js` 第 115 行被遮蔽的 `groupEntered`。**核查后更正**：`swarm.getActiveCount()` 实际被 `08-视觉原型/test_headless.js` 调用，不是死代码，保留；`config.lerp()` 无调用方，但它是共享 config 的工具 API（与 `clamp`/`mixHSL`/`smoothstep` 同级），保留以免收窄他人可用的接口面。
 - [x] P2：修正 `web/interaction/config.js` 注释里 `audioModuleUrl` 的示例路径与旧计数（2026-09-11 完成）。
@@ -46,7 +46,7 @@
 ## Later
 
 - [ ] 语音、身体追踪、多人状态、更多材质与复杂声音。
-- [ ] 协作规则：确定同事权限、分支／PR 流程；用户尚未提供邀请对象，不自动邀请。
+- [ ] 协作规则：确定同事写入权限、分支／PR 流程；仓库公开仅提供读取权限，不自动邀请写入者。
 
 ## Blocked
 

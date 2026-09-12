@@ -73,4 +73,4 @@ NESTING_API_KEY=sk-... python3 10-语言解码/derive_bee.py live --transcript "
 
 未设置密钥时，解码只做文字结构拆分，界面与数据都会标注「未解码」，不会用中性默认值冒充模型判断。语音识别（ASR）尚未接入，转写目前由人填写。
 
-本目录已建立独立 Git 仓库；private 远端为 `eddiescloud/nesting`，协作访问需由仓库所有者单独邀请。完整测试命令见 web/interaction/README.md。
+本目录已建立独立 Git 仓库；GitHub 远端为公开仓库 `eddiescloud/nesting`。任何人可查看；提交代码仍需仓库权限，建议同事通过分支与 Pull Request 协作。完整测试命令见 web/interaction/README.md。

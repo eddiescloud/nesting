@@ -1,5 +1,21 @@
 # Current Status
 
+## 公开仓库切换（2026-09-12，最新）
+
+### Completed / Changed
+用户发现其他人无法访问 private 仓库，明确要求先公开。公开前复核已提交的 123 个文件：无密钥、私钥、真实观众录音等明显敏感内容；`.workbuddy*`、`.env*` 与缓存均未纳入 Git。仅更新 AGENTS、README、DECISIONS、TODO、HANDOFF 的可见性说明，不混入本地其他人正在修改的 `web/visual/js/bee.js`。
+
+### Current State / Known Issues
+`eddiescloud/nesting` 已按用户选择转为 public；任何人可以读取已推送的源码、文档、示例截图和完整提交历史，但没有自动获得写入权限。公开后尤其不得提交真实观众文本、录音、密钥或凭证。业务功能本轮未改；ASR 和现场设备验证仍待完成。
+
+### Next Step / Important Context
+若同事需要直接推送，收集其 GitHub 用户名后授予权限；更推荐 Fork／分支加 Pull Request。继续以项目目录为 Git 根，不碰桌面父仓库。当前未提交的视觉代码属于并发工作，勿覆盖。
+
+### Commands
+`git status`、`git log -1 --oneline`、`git remote -v`；运行：`python3 web/interaction/server.py --port 8765`。测试命令见 `docs/VERIFICATION_STATUS.md`。
+
+---
+
 ## GitHub 协作基线（2026-09-12）
 
 ### Completed / Changed
